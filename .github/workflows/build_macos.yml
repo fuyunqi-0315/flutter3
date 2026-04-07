@@ -25,7 +25,7 @@ jobs:
       - name: 压缩成单文件 zip
         run: |
           cd build/macos/Build/Products/Release
-          zip -r test47.zip test47.app
+          zip -r flutter3.zip flutter3.app
 
       - name: 上传打包结果
         uses: actions/upload-artifact@v4
