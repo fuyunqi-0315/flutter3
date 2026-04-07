@@ -12,25 +12,31 @@ jobs:
       - name: 拉取代码
         uses: actions/checkout@v4
 
-      - name: 配置 Flutter
+      - name: 配置Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.x' # 兼容所有稳定版
+          flutter-version: '3.27.3' # 固定稳定版，避免版本兼容问题
           channel: 'stable'
 
-      - name: 启用 macOS 平台（关键修复）
-        run: flutter create . --platforms=macos
+      - name: 安装CocoaPods（macOS构建必备）
+        run: sudo gem install cocoapods
 
-      - name: 安装依赖
+      - name: 补全macOS平台工程文件（关键修复）
+        run: flutter create . --platforms=macos --org com.example
+
+      - name: 安装Flutter依赖
         run: flutter pub get
 
-      - name: 清理旧构建
+      - name: 清理旧构建缓存
         run: flutter clean
 
-      - name: 打包 macOS Release 版本
-        run: flutter build macos --release
+      - name: 安装macOS项目Pods依赖
+        run: cd macos && pod install
 
-      - name: 压缩为单文件 zip
+      - name: 打包macOS Release版本（禁用签名，GitHub Actions必加）
+        run: flutter build macos --release --no-codesign
+
+      - name: 压缩为单文件zip
         run: |
           cd build/macos/Build/Products/Release
           zip -r flutter3.zip flutter3.app
