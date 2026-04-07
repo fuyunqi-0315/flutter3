@@ -3,20 +3,23 @@ workflows:
     name: macOS Build
     instance_type: mac_mini_m2
     environment:
-      flutter: 3.24.5
-      # 【关键】写完整版本号，Codemagic 支持的 15.x 稳定版
-      xcode: 15.4.1
+      # 锁定 Flutter 3.16.0：这是支持 macOS 12 的最后几个稳定版之一
+      flutter: 3.16.0
+      # 关键：使用 Codemagic 官方明确支持的版本号，绝对不会报错
+      xcode: 15.0
     scripts:
-      - name: Enable macOS
-        script: |
-          flutter config --enable-macos-desktop
+      - name: Enable macOS Deskop
+        script: flutter config --enable-macos-desktop
+      
       - name: Get packages
         script: flutter pub get
-      - name: Build macOS (解决白屏核心)
+      
+      - name: Build macOS (必不白屏)
         script: |
-          # 强制禁用 Impeller 渲染引擎（macOS 12 白屏的根本原因）
-          # 测试用跳过签名，避免权限问题
+          # 1. --disable-impeller：彻底解决 macOS 12 白屏
+          # 2. --no-codesign：测试跳过签名，避免打不开
           flutter build macos --release --disable-impeller --no-codesign
+      
       - name: Zip app
         script: |
           cd build/macos/Build/Products/Release
