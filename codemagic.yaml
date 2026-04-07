@@ -1,21 +1,16 @@
 workflows:
   macos-workflow:
     name: macOS Build
-    # 既然界面只有这个，就用这个
     instance_type: mac_mini_m2
 
     environment:
-      # 你的 Flutter 版本
       flutter: 3.16.9
-      # 核心修复：锁定 Xcode 14.2
-      # 这是支持 macOS 12 的最后一个版本，必须锁死
-      xcode: 14.2.0
+      # 修改点：使用 14.3.1，这是 M2 机器上可能存在的最后一个旧版 Xcode
+      xcode: 14.3.1
       vars:
-        # 开启 macOS 支持
         FLUTTER_ENABLE_MACOS: "true"
 
     scripts:
-      # 1. 清理旧缓存（防止白屏）
       - name: Clean up
         script: |
           rm -rf build/
@@ -23,17 +18,16 @@ workflows:
           rm -rf macos/.symlinks/
           flutter clean
 
-      # 2. 开启桌面支持
       - name: Enable macOS
         script: flutter config --enable-macos-desktop
 
-      # 3. 获取依赖
       - name: Get Packages
         script: flutter pub get
 
-      # 4. 构建 Release 版本
-      # 这一步生成的就是你要的安装包
-      - name: Build macOS Release
+      - name: Build macOS
+        # 关键构建命令
         script: flutter build macos --release
 
-    # 注意：这里完全没有 publishing 部分，因为不需要发布
+    artifacts:
+      # 只保留这一项，确保你能下载到App
+      - build/macos/Build/Products/Release/*.app
