@@ -1,33 +1,41 @@
 workflows:
   macos-workflow:
     name: macOS Sonoma Build
-    # M2 机器构建速度最快，且完美适配你的 macOS 14 虚拟机
+    # 使用 M2 机器，构建速度快且兼容性好
     instance_type: mac_mini_m2
 
     environment:
-      # 使用稳定的 Flutter 版本
       flutter: stable
-      # 不指定 Xcode 版本，自动使用 macOS 14 上最新的 Xcode (15 或 16)
+      xcode: latest
       vars:
+        # 开启 macOS 桌面支持
         FLUTTER_ENABLE_MACOS: "true"
 
     scripts:
-      - name: 清理旧缓存
+      - name: 环境清理
         script: |
           flutter clean
           rm -rf build/
           rm -rf macos/Pods/
           rm -rf macos/.symlinks/
 
-      - name: 开启 macOS 支持
+      - name: 启用 macOS 桌面端
         script: flutter config --enable-macos-desktop
 
-      - name: 获取依赖
+      - name: 获取依赖包
         script: flutter pub get
 
-      - name: 构建 Release 版本
-        script: flutter build macos --release
+      - name: 更新 Pods (关键步骤)
+        # 这一步非常重要，确保 macOS 的原生依赖库正确安装
+        script: |
+          cd macos
+          pod install --repo-update
+          cd ..
 
-    # 只保留 artifacts，告诉 Codemagic 构建完后把文件保留下来供下载
+      - name: 构建 Release 版本
+        # 显式指定构建目标
+        script: flutter build macos --release --verbose
+
     artifacts:
+      # 输出构建好的 app 文件夹
       - build/macos/Build/Products/Release/*.app
