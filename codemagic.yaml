@@ -1,29 +1,25 @@
 workflows:
-  macos-workflow:
-    name: macOS Build
-    instance_type: mac_mini_m2
+  simple-ios-workflow:
+    name: 简单iOS构建
+    max_build_duration: 30
+    instance_type: mac_mini_m1 # 推荐使用 M1 机器构建 iOS，速度更快
     environment:
-      # 锁定最后一个完美兼容 macOS 12 的 Flutter 稳定版
-      flutter: 3.16.9
-      # 关键：使用 Codemagic 官方明确支持的最低可用版本（M2 机器唯一兼容 12 的 Xcode）
-      xcode: 15.2
+      # 使用最新的稳定版 Flutter
+      flutter: stable
+      # 需要指定 Xcode 版本，这里以 Xcode 14 为例，Codemagic 会自动匹配
+      xcode: latest
+
     scripts:
-      - name: Enable macOS Desktop
-        script: flutter config --enable-macos-desktop
-      
-      - name: Get packages
+      - name: 获取依赖
         script: flutter pub get
-      
-      - name: Build macOS (彻底解决白屏)
-        script: |
-          # 1. --disable-impeller：关闭Impeller，解决macOS12白屏（核心）
-          # 2. --no-codesign：测试跳过签名，避免打不开
-          # 3. --macos-deployment-target=10.15：强制降低部署目标，兼容macOS12
-          flutter build macos --release --disable-impeller --no-codesign --macos-deployment-target=10.15
-      
-      - name: Zip app
-        script: |
-          cd build/macos/Build/Products/Release
-          zip -r --symlinks Test47.zip Test47.app
+
+      - name: 构建 iOS 应用
+        # --no-codesign 表示不进行苹果签名，因为你是为了在模拟器或本地测试运行
+        # 如果需要真机运行，则需要配置证书，但根据你的描述，--no-codesign 足够用于“解压运行”
+        script: flutter build ipa --release --no-codesign
+
     artifacts:
-      - build/macos/Build/Products/Release/Test47.zip
+      # 告诉 Codemagic 把构建好的 ipa 或 app 文件保存下来
+      - build/ios/ipa/*.app
+      # 如果你想同时保留 ipa 文件（虽然它本质上也是个 zip），可以加上这一行
+      # - build/ios/ipa/*.ipa
