@@ -2,32 +2,28 @@ workflows:
   macos-workflow:
     name: macOS Build
     instance_type: mac_mini_m2
-
     environment:
+      # 锁定最后一个完美兼容 macOS 12 的 Flutter 稳定版
       flutter: 3.16.9
-      # 修改点：使用 14.3.1，这是 M2 机器上可能存在的最后一个旧版 Xcode
-      xcode: 14.3.1
-      vars:
-        FLUTTER_ENABLE_MACOS: "true"
-
+      # 关键：使用 Codemagic 官方明确支持的最低可用版本（M2 机器唯一兼容 12 的 Xcode）
+      xcode: 15.2
     scripts:
-      - name: Clean up
-        script: |
-          rm -rf build/
-          rm -rf macos/Pods/
-          rm -rf macos/.symlinks/
-          flutter clean
-
-      - name: Enable macOS
+      - name: Enable macOS Desktop
         script: flutter config --enable-macos-desktop
-
-      - name: Get Packages
+      
+      - name: Get packages
         script: flutter pub get
-
-      - name: Build macOS
-        # 关键构建命令
-        script: flutter build macos --release
-
+      
+      - name: Build macOS (彻底解决白屏)
+        script: |
+          # 1. --disable-impeller：关闭Impeller，解决macOS12白屏（核心）
+          # 2. --no-codesign：测试跳过签名，避免打不开
+          # 3. --macos-deployment-target=10.15：强制降低部署目标，兼容macOS12
+          flutter build macos --release --disable-impeller --no-codesign --macos-deployment-target=10.15
+      
+      - name: Zip app
+        script: |
+          cd build/macos/Build/Products/Release
+          zip -r --symlinks Test47.zip Test47.app
     artifacts:
-      # 只保留这一项，确保你能下载到App
-      - build/macos/Build/Products/Release/*.app
+      - build/macos/Build/Products/Release/Test47.zip
