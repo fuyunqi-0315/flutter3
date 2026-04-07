@@ -1,23 +1,46 @@
 workflows:
   macos-workflow:
     name: macOS Build
-    # 修改点 1：将实例类型从 mac_mini_m2 改为 mac_mini_m1
-    instance_type: mac_mini_m1
+    # 既然界面只能选这个，我们就用它，但通过配置降级 Xcode
+    instance_type: mac_mini_m2 
+    
     environment:
+      # 保持你的 Flutter 版本
       flutter: 3.16.9
-      # 修改点 2：指定一个在 macOS 12 上非常稳定的 Xcode 版本
-      # Xcode 14.2 是支持 macOS 12 的最后一个主要版本，非常稳
-      xcode: 14.2.0
+      # 核心修复：强制指定 Xcode 14.2
+      # 14.2 是支持 macOS 12 的最后一个主要版本，能解决你的白屏问题
+      xcode: 14.2.0 
+      # 开启 macOS 桌面支持
+      vars:
+        FLUTTER_ENABLE_MACOS: "true"
+
     scripts:
+      - name: Clean Build Artifacts
+        # 关键步骤：清理之前的缓存，防止新旧版本冲突
+        script: |
+          rm -rf build/
+          rm -rf macos/Pods/
+          rm -rf macos/.symlinks/
+          flutter clean
+
       - name: Enable macOS Desktop
         script: flutter config --enable-macos-desktop
-      
-      - name: Get packages
+
+      - name: Get Flutter Packages
         script: flutter pub get
-      
-      - name: Build macOS
-        script: |
-          # 保持你的构建参数不变
-          flutter build macos --release --disable-impeller --no-codesign --macos-deployment-target=10.15
-      
-      # ... 后面的保持不变 ...
+
+      - name: Analyze Project
+        script: flutter analyze
+
+      - name: Build macOS Application
+        # 使用 release 模式构建
+        script: flutter build macos --release
+
+    artifacts:
+      # 导出构建产物，方便你下载
+      - build/macos/Build/Products/Release/*.app
+      - build/macos/Build/Products/Release/*.dSYM
+
+    publishing:
+      # 这里配置构建完成后保留产物，方便下载
+      artifacts: true
