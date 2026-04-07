@@ -1,10 +1,11 @@
 workflows:
   macos-workflow:
     name: macOS Build
-    instance_type: mac_mini_m2
+    # 【关键】切换到 Intel 架构机器，唯一支持 Xcode 14.2 的实例
+    instance_type: mac_pro
     environment:
-      flutter: 3.19.0          # 锁定稳定版，不使用 latest
-      xcode: 14.2               # 【关键】macOS12 唯一兼容的 Xcode 版本
+      flutter: 3.19.0          # 锁定稳定版，避免版本冲突
+      xcode: 14.2               # macOS12 唯一兼容的 Xcode 版本
     scripts:
       - name: Enable macOS
         script: |
@@ -13,7 +14,7 @@ workflows:
         script: flutter pub get
       - name: Build macOS
         script: |
-          # 【关键】禁用 Impeller + 不签名（测试用）
+          # 【关键】禁用 Impeller 解决白屏 + 测试用不签名
           flutter build macos --release --disable-impeller --no-codesign
       - name: Zip app
         script: |
