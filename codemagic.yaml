@@ -3,22 +3,21 @@ workflows:
     name: macOS Build
     instance_type: mac_mini_m2
     environment:
-      flutter: stable
-      xcode: latest
+      flutter: 3.19.0          # 锁定稳定版，不使用 latest
+      xcode: 14.2               # 【关键】macOS12 唯一兼容的 Xcode 版本
     scripts:
       - name: Enable macOS
         script: |
           flutter config --enable-macos-desktop
-          flutter create .
       - name: Get packages
         script: flutter pub get
       - name: Build macOS
-        script: flutter build macos --release
-      # 👇 在构建结束后，直接把 .app 打包成 .zip，方便下载
+        script: |
+          # 【关键】禁用 Impeller + 不签名（测试用）
+          flutter build macos --release --disable-impeller --no-codesign
       - name: Zip app
         script: |
           cd build/macos/Build/Products/Release
           zip -r --symlinks Test47.zip Test47.app
-    # 👇 这里定义要保存的文件
     artifacts:
       - build/macos/Build/Products/Release/Test47.zip
