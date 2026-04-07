@@ -1,20 +1,20 @@
 workflows:
   macos-workflow:
     name: macOS Build
-    # 【关键】切换到 Intel 架构机器，唯一支持 Xcode 14.2 的实例
-    instance_type: mac_pro
+    instance_type: mac_mini_m2  # 保留你当前可用的实例
     environment:
-      flutter: 3.19.0          # 锁定稳定版，避免版本冲突
-      xcode: 14.2               # macOS12 唯一兼容的 Xcode 版本
+      flutter: 3.24.5  # 锁定稳定版，兼容 macOS 12
+      xcode: 15.4      # Apple Silicon 支持的最低稳定版，兼容 macOS 12
     scripts:
       - name: Enable macOS
         script: |
           flutter config --enable-macos-desktop
       - name: Get packages
         script: flutter pub get
-      - name: Build macOS
+      - name: Build macOS (解决白屏核心)
         script: |
-          # 【关键】禁用 Impeller 解决白屏 + 测试用不签名
+          # 1. 强制禁用 Impeller 渲染引擎（macOS 12 白屏的根本原因）
+          # 2. 测试用跳过签名，避免权限问题
           flutter build macos --release --disable-impeller --no-codesign
       - name: Zip app
         script: |
