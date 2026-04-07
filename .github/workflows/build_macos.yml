@@ -3,31 +3,39 @@ name: Build macOS App
 on:
   push:
     branches: [ main ]
-  workflow_dispatch: # 允许手动点击打包
+  workflow_dispatch:
 
 jobs:
   build:
-    runs-on: macos-latest # 用 GitHub 免费 Mac 环境
+    runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: 拉取代码
+        uses: actions/checkout@v4
 
-      - name: 设置 Flutter
+      - name: 配置 Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: stable # 最新稳定版
+          flutter-version: '3.x' # 兼容所有稳定版
+          channel: 'stable'
+
+      - name: 启用 macOS 平台（关键修复）
+        run: flutter create . --platforms=macos
 
       - name: 安装依赖
         run: flutter pub get
 
-      - name: 打包 macOS Release
+      - name: 清理旧构建
+        run: flutter clean
+
+      - name: 打包 macOS Release 版本
         run: flutter build macos --release
 
-      - name: 压缩成单文件 zip
+      - name: 压缩为单文件 zip
         run: |
           cd build/macos/Build/Products/Release
           zip -r flutter3.zip flutter3.app
 
-      - name: 上传打包结果
+      - name: 上传打包产物
         uses: actions/upload-artifact@v4
         with:
           name: macOS-App
