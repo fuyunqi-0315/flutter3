@@ -1,25 +1,30 @@
+# codemagic.yaml
+
 workflows:
-  simple-ios-workflow:
-    name: 简单iOS构建
-    max_build_duration: 30
-    instance_type: mac_mini_m1 # 推荐使用 M1 机器构建 iOS，速度更快
+  macos-desktop-build:
+    name: 构建 macOS 桌面应用
+    instance_type: mac_mini_m1 # 必须使用 macOS 环境
     environment:
-      # 使用最新的稳定版 Flutter
       flutter: stable
-      # 需要指定 Xcode 版本，这里以 Xcode 14 为例，Codemagic 会自动匹配
       xcode: latest
 
+    triggering:
+      events:
+        - push
+        - tag
+        - pull_request
+
     scripts:
+      - name: 启用 macOS 桌面支持
+        script: flutter config --enable-macos-desktop
+
       - name: 获取依赖
         script: flutter pub get
 
-      - name: 构建 iOS 应用
-        # --no-codesign 表示不进行苹果签名，因为你是为了在模拟器或本地测试运行
-        # 如果需要真机运行，则需要配置证书，但根据你的描述，--no-codesign 足够用于“解压运行”
-        script: flutter build ipa --release --no-codesign
+      - name: 构建 macOS Release 版本
+        script: flutter build macos --release
 
     artifacts:
-      # 告诉 Codemagic 把构建好的 ipa 或 app 文件保存下来
-      - build/ios/ipa/*.app
-      # 如果你想同时保留 ipa 文件（虽然它本质上也是个 zip），可以加上这一行
-      # - build/ios/ipa/*.ipa
+      # 指定 Codemagic 归档 build 目录下的 macos 产物
+      # 这样你就可以在 Codemagic 页面下载到一个包含 .app 的压缩包
+      - build/macos/Build/Products/Release/*.app
