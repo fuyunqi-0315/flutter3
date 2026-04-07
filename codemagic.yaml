@@ -1,35 +1,24 @@
 workflows:
   macos-workflow:
     name: macOS Build
-    # 指定使用 macOS 环境
-    max_build_duration: 30
-    instance_type: mac_mini_m1 # 或者 mac_mini (Intel)，M1 编译更快
+    instance_type: mac_mini_m2
     environment:
-      # 必须显式启用 macOS
       flutter: stable
       xcode: latest
-      cocoapods: default
-    
-    # 关键步骤：启用 macOS 支持
     scripts:
       - name: Enable macOS
         script: |
           flutter config --enable-macos-desktop
-          flutter create . # 这一步会重新生成 macos/ 文件夹（如果本地没提交的话）
-
+          flutter create .
       - name: Get packages
         script: flutter pub get
-
       - name: Build macOS
         script: flutter build macos --release
-
-    # 将构建好的产物导出
+      # 👇 在构建结束后，直接把 .app 打包成 .zip，方便下载
+      - name: Zip app
+        script: |
+          cd build/macos/Build/Products/Release
+          zip -r --symlinks Test47.zip Test47.app
+    # 👇 这里定义要保存的文件
     artifacts:
-      - build/macos/Build/Products/Release/*.app
-
-    # 可选：构建完后自动压缩，方便下载
-    publishing:
-      artifacts:
-        config:
-          # 将 .app 打包成 .zip，方便在虚拟机里解压使用
-          zip: build/macos/Build/Products/Release/*.app
+      - build/macos/Build/Products/Release/Test47.zip
