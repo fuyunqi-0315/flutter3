@@ -3,10 +3,21 @@ workflows:
     name: macOS Build
     instance_type: mac_mini_m2
     environment:
-      # 锁定最后一个完美兼容 macOS 12 的 Flutter 稳定版
+      # 保持 Flutter 版本不变（3.16.9 是个很稳的版本）
       flutter: 3.16.9
-      # 关键：使用 Codemagic 官方明确支持的最低可用版本
-      xcode: 15.2
+      
+      # 修改点 1：升级 Xcode 版本
+      # mac_mini_m2 目前完美支持 15.3 或 15.4
+      # 建议直接写 15.4，或者尝试 latest
+      xcode: 15.4 
+
+      # 修改点 2：修正环境变量拼写
+      # 你之前的截图里写成了 FLUTTER_DISABLELE_GPU (多了一个LE)
+      # 正确的变量名是 FLUTTER_DISABLE_GPU
+      # 或者你可以直接在脚本里加参数，这样更稳妥
+      vars:
+        FLUTTER_DISABLE_GPU: "1"
+
     scripts:
       - name: Enable macOS Desktop
         script: flutter config --enable-macos-desktop
@@ -14,16 +25,15 @@ workflows:
       - name: Get packages
         script: flutter pub get
       
-      - name: Build macOS (彻底解决白屏)
+      - name: Build macOS
         script: |
-          # 1. --disable-impeller：关闭Impeller，解决macOS12白屏
-          # 2. --no-codesign：测试跳过签名，避免打不开
-          # 3. 强制设置最低部署目标为 macOS 10.15，兼容12
+          # 这里的 --disable-impeller 非常关键，能解决你之前遇到的白屏问题
           flutter build macos --release --disable-impeller --no-codesign --macos-deployment-target=10.15
       
       - name: Zip app
         script: |
           cd build/macos/Build/Products/Release
           zip -r --symlinks Test47.zip Test47.app
+
     artifacts:
       - build/macos/Build/Products/Release/Test47.zip
