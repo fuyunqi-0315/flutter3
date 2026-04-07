@@ -1,23 +1,13 @@
 workflows:
   macos-workflow:
     name: macOS Build
-    instance_type: mac_mini_m2
+    # 修改点 1：将实例类型从 mac_mini_m2 改为 mac_mini_m1
+    instance_type: mac_mini_m1
     environment:
-      # 保持 Flutter 版本不变（3.16.9 是个很稳的版本）
       flutter: 3.16.9
-      
-      # 修改点 1：升级 Xcode 版本
-      # mac_mini_m2 目前完美支持 15.3 或 15.4
-      # 建议直接写 15.4，或者尝试 latest
-      xcode: 15.4 
-
-      # 修改点 2：修正环境变量拼写
-      # 你之前的截图里写成了 FLUTTER_DISABLELE_GPU (多了一个LE)
-      # 正确的变量名是 FLUTTER_DISABLE_GPU
-      # 或者你可以直接在脚本里加参数，这样更稳妥
-      vars:
-        FLUTTER_DISABLE_GPU: "1"
-
+      # 修改点 2：指定一个在 macOS 12 上非常稳定的 Xcode 版本
+      # Xcode 14.2 是支持 macOS 12 的最后一个主要版本，非常稳
+      xcode: 14.2.0
     scripts:
       - name: Enable macOS Desktop
         script: flutter config --enable-macos-desktop
@@ -27,13 +17,7 @@ workflows:
       
       - name: Build macOS
         script: |
-          # 这里的 --disable-impeller 非常关键，能解决你之前遇到的白屏问题
+          # 保持你的构建参数不变
           flutter build macos --release --disable-impeller --no-codesign --macos-deployment-target=10.15
       
-      - name: Zip app
-        script: |
-          cd build/macos/Build/Products/Release
-          zip -r --symlinks Test47.zip Test47.app
-
-    artifacts:
-      - build/macos/Build/Products/Release/Test47.zip
+      # ... 后面的保持不变 ...
