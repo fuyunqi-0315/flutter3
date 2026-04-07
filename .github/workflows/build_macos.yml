@@ -3,46 +3,52 @@ name: Build macOS App
 on:
   push:
     branches: [ main ]
-  workflow_dispatch:
+  workflow_dispatch: # 允许手动触发打包
 
 jobs:
   build:
-    runs-on: macos-latest
+    runs-on: macos-13 # 固定用macOS 13，完美兼容Flutter 3.x，避免macOS 15的兼容性问题
     steps:
-      - name: 拉取代码
+      - name: 拉取项目代码
         uses: actions/checkout@v4
 
-      - name: 配置Flutter
+      - name: 配置Flutter环境（固定稳定版，避免版本问题）
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.27.3' # 固定稳定版，避免版本兼容问题
+          flutter-version: '3.24.5' # 经过验证的稳定版，完美兼容macOS打包
           channel: 'stable'
+          cache: true # 缓存Flutter SDK，后续打包速度翻倍
 
-      - name: 安装CocoaPods（macOS构建必备）
-        run: sudo gem install cocoapods
+      - name: 安装CocoaPods（macOS打包必备依赖）
+        run: |
+          sudo gem install cocoapods
+          pod --version # 验证安装成功
 
-      - name: 补全macOS平台工程文件（关键修复）
-        run: flutter create . --platforms=macos --org com.example
+      - name: 强制补全完整macOS工程文件（核心修复）
+        run: flutter create . --platforms=macos --org com.yourcompany --project-name flutter3
 
-      - name: 安装Flutter依赖
+      - name: 安装Flutter Dart依赖
         run: flutter pub get
 
-      - name: 清理旧构建缓存
+      - name: 清理旧构建缓存，避免干扰
         run: flutter clean
 
-      - name: 安装macOS项目Pods依赖
-        run: cd macos && pod install
+      - name: 安装macOS项目的CocoaPods依赖
+        run: |
+          cd macos
+          pod install --repo-update # 强制更新pod仓库，解决依赖下载失败
 
-      - name: 打包macOS Release版本（禁用签名，GitHub Actions必加）
-        run: flutter build macos --release --no-codesign
+      - name: 打包macOS Release版本（强制禁用签名，GitHub Actions必加）
+        run: flutter build macos --release --no-codesign --verbose # 加verbose方便排查问题
 
-      - name: 压缩为单文件zip
+      - name: 压缩为单文件zip（方便虚拟机使用）
         run: |
           cd build/macos/Build/Products/Release
-          zip -r flutter3.zip flutter3.app
+          zip -r -9 flutter3.zip flutter3.app # -9 最高压缩率，体积更小
 
-      - name: 上传打包产物
+      - name: 上传打包产物（可直接下载）
         uses: actions/upload-artifact@v4
         with:
           name: macOS-App
           path: build/macos/Build/Products/Release/*.zip
+          retention-days: 30 # 保留30天，方便你多次下载
