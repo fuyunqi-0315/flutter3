@@ -1,28 +1,14 @@
 workflows:
-  ios-release:
-    name: iOS Release (IPA for AiSi)
+  macos-release:
+    name: macOS Release (Un-signed)
     instance_type: mac_mini_m2
     environment:
       xcode: latest
       flutter: stable
-      vars:
-        XCODE_WORKSPACE: "Runner.xcworkspace"
-        XCODE_SCHEME: "Runner"
-
     scripts:
-      - name: "Get Flutter packages"
-        script: flutter pub get
-
-      - name: "Build IPA"
-        # 关键：--no-codesign 表示不签名，交给爱思助手处理
-        script: flutter build ipa --release --no-codesign
-
+      - name: Flutter Build
+        # 核心：使用 --no-codesign 告诉系统不要签名
+        script: flutter build macos --release --no-codesign
     artifacts:
-      # 关键修改：使用绝对路径进行全盘搜索
-      # 这行代码会搜索整个系统构建目录下的所有 ipa 和 app 文件
-      - /Users/builder/build/**/*.ipa
-      - /Users/builder/build/**/*.app
-      
-      # 保留相对路径搜索作为保险
-      - build/**/*.ipa
-      - build/**/*.app
+      # 把整个 App 包打包成 zip，方便 Windows 下载
+      - build/macos/Build/Products/Release/Runner.app.zip
