@@ -1,14 +1,35 @@
 workflows:
-  macos-release:
-    name: macOS Release (Un-signed)
+  macos-unsigned:
+    name: Build Unsigned macOS (For VM)
     instance_type: mac_mini_m2
     environment:
       xcode: latest
       flutter: stable
     scripts:
-      - name: Flutter Build
-        # 核心：使用 --no-codesign 告诉系统不要签名
-        script: flutter build macos --release --no-codesign
+      - name: Set up code signing settings
+        # 关键：创建一个临时的配置文件，告诉 Xcode 不要签名
+        script: |
+          cat > /tmp/unsigned.xcconfig <<EOF
+          CODE_SIGN_IDENTITY = -
+          CODE_SIGNING_REQUIRED = NO
+          CODE_SIGNING_ALLOWED = NO
+          EOF
+
+      - name: Build with Xcode
+        # 使用 xcodebuild 而不是 flutter build macos
+        script: |
+          cd macos
+          xcodebuild -workspace Runner.xcworkspace \
+                     -scheme Runner \
+                     -configuration Release \
+                     -destination "generic/platform=macOS" \
+                     CODE_SIGN_IDENTITY=- \
+                     CODE_SIGNING_REQUIRED=NO \
+                     CODE_SIGNING_ALLOWED=NO \
+                     BUILD_DIR=../build/macos/Build \
+                     BUILD_ROOT=../build/macos/Build \
+                     OBJROOT=../build/macos/Build/Intermediates.noindex
+
     artifacts:
-      # 把整个 App 包打包成 zip，方便 Windows 下载
-      - build/macos/Build/Products/Release/Runner.app.zip
+      # 打包生成的 App
+      - build/macos/Build/Products/Release/Runner.app
