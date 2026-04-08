@@ -1,26 +1,28 @@
 workflows:
-  build-ios:
-    name: Build iOS
-    instance_type: mac_mini_m1
+  ios-release:
+    name: iOS Release (IPA for AiSi)
+    instance_type: mac_mini_m2
     environment:
-      flutter: stable
       xcode: latest
+      flutter: stable
+      vars:
+        XCODE_WORKSPACE: "Runner.xcworkspace"
+        XCODE_SCHEME: "Runner"
+
     scripts:
-      - name: Install dependencies
-        script: |
-          flutter pub get
-      - name: Build iOS archive
-        script: |
-          # 1. 构建未签名的.app
-          flutter build ios --release --no-codesign
-          # 2. 创建ipa输出目录
-          mkdir -p build/ios/ipa
-          # 3. 进入构建产物目录
-          cd build/ios/Release-iphoneos
-          # 4. 创建标准Payload文件夹，把.app复制进去
-          mkdir -p Payload
-          cp -R Runner.app Payload/Runner.app
-          # 5. 打包成标准ipa
-          zip -r ../ipa/Runner.ipa Payload
+      - name: "Get Flutter packages"
+        script: flutter pub get
+
+      - name: "Build IPA"
+        # 关键：--no-codesign 表示不签名，交给爱思助手处理
+        script: flutter build ipa --release --no-codesign
+
     artifacts:
-      - build/ios/ipa/Runner.ipa
+      # 关键修改：使用绝对路径进行全盘搜索
+      # 这行代码会搜索整个系统构建目录下的所有 ipa 和 app 文件
+      - /Users/builder/build/**/*.ipa
+      - /Users/builder/build/**/*.app
+      
+      # 保留相对路径搜索作为保险
+      - build/**/*.ipa
+      - build/**/*.app
